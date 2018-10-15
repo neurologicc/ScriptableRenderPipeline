@@ -1,3 +1,4 @@
+using System;
 using UnityEditor.AnimatedValues;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering.LightweightPipeline;
@@ -20,6 +21,7 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
 
         class Styles
         {
+            public static GUIContent mainLightRenderingModeText = EditorGUIUtility.TrTextContent("Main Light", "Main light is the brightest directional light.");
             public readonly GUIContent SpotAngle = EditorGUIUtility.TrTextContent("Spot Angle", "Controls the angle in degrees at the base of a Spot light's cone.");
 
             public readonly GUIContent BakingWarning = EditorGUIUtility.TrTextContent("Light mode is currently overridden to Realtime mode. Enable Baked Global Illumination to use Mixed or Baked light modes.");
@@ -28,8 +30,9 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
             public readonly GUIContent ShadowsNotSupportedWarning = EditorGUIUtility.TrTextContent("Realtime shadows for point lights are not supported. Either disable shadows or set the light mode to Baked.");
             public static readonly GUIContent ShadowRealtimeSettings = EditorGUIUtility.TrTextContent("Realtime Shadows", "Settings for realtime direct shadows.");
             public static readonly GUIContent ShadowStrength = EditorGUIUtility.TrTextContent("Strength", "Controls how dark the shadows cast by the light will be.");
-            public static readonly GUIContent ShadowResolution = EditorGUIUtility.TrTextContent("Resolution", "Controls the rendered resolution of the shadow maps. A higher resolution will increase the fidelity of shadows at the cost of GPU performance and memory usage.");
+            //public static readonly GUIContent ShadowResolution = EditorGUIUtility.TrTextContent("Resolution", "Controls the rendered resolution of the shadow maps. A higher resolution will increase the fidelity of shadows at the cost of GPU performance and memory usage.");
             public static readonly GUIContent ShadowNearPlane = EditorGUIUtility.TrTextContent("Near Plane", "Controls the value for the near clip plane when rendering shadows. Currently clamped to 0.1 units or 1% of the lights range property, whichever is lower.");
+            public static string[] biasOptions = Enum.GetNames(typeof(BiasOption));
         }
 
         static Styles s_Styles;
@@ -65,8 +68,17 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
             }
         }
 
+        SerializedProperty m_UseAdditionalDataProp;
+
+        public enum BiasOption
+        {
+            UsePipeline,
+            Custom
+        }
+
         protected override void OnEnable()
         {
+            
             settings.OnEnable();
             UpdateShowOptions(true);
         }
@@ -187,7 +199,13 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
                     EditorGUILayout.LabelField(Styles.ShadowRealtimeSettings);
                     EditorGUI.indentLevel += 1;
                     EditorGUILayout.Slider(settings.shadowsStrength, 0f, 1f, Styles.ShadowStrength);
-                    EditorGUILayout.PropertyField(settings.shadowsResolution, Styles.ShadowResolution);
+                    int bias = 0;
+                    //EditorGUILayout.EnumPopup(BiasOption, GUIStyle.none, null);
+
+                    //CoreEditorUtils.DrawPopup(Styles.mainLightRenderingModeText, m_MainLightRenderingModeProp, Styles.biasOptions);
+
+                    // Hiding the resolution
+                    //EditorGUILayout.PropertyField(settings.shadowsResolution, Styles.ShadowResolution);
 
                     // this min bound should match the calculation in SharedLightData::GetNearPlaneMinBound()
                     float nearPlaneMinBound = Mathf.Min(0.01f * settings.range.floatValue, 0.1f);

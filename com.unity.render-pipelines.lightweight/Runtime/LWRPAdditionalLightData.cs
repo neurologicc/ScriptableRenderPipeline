@@ -9,6 +9,16 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
         [Tooltip("Controls distance by which the shadow casting surfaces will be shrunk along the surface normal. Useful for avoiding false self-shadowing artifacts.")]
         [SerializeField] float m_NormalBias = 1.0f;
+
+        [Tooltip("Controls the usage of additional data.")]
+        [SerializeField] bool m_UseAdditionalData = false;
+
+        public bool useAdditionalData
+        {
+            get { return m_UseAdditionalData; }
+            set { m_UseAdditionalData = value; }
+        }
+
         public float depthBias
         {
             get { return m_DepthBias; }
