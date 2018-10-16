@@ -7,7 +7,7 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
 {
     [CanEditMultipleObjects]
     [CustomEditorForRenderPipeline(typeof(Light), typeof(LightweightRenderPipelineAsset))]
-    internal class LightweightRenderPipelineLightEditor : LightEditor
+    class LightweightRenderPipelineLightEditor : LightEditor
     {
         AnimBool m_AnimSpotOptions = new AnimBool();
         AnimBool m_AnimPointOptions = new AnimBool();
@@ -30,9 +30,16 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
             public readonly GUIContent ShadowsNotSupportedWarning = EditorGUIUtility.TrTextContent("Realtime shadows for point lights are not supported. Either disable shadows or set the light mode to Baked.");
             public static readonly GUIContent ShadowRealtimeSettings = EditorGUIUtility.TrTextContent("Realtime Shadows", "Settings for realtime direct shadows.");
             public static readonly GUIContent ShadowStrength = EditorGUIUtility.TrTextContent("Strength", "Controls how dark the shadows cast by the light will be.");
-            //public static readonly GUIContent ShadowResolution = EditorGUIUtility.TrTextContent("Resolution", "Controls the rendered resolution of the shadow maps. A higher resolution will increase the fidelity of shadows at the cost of GPU performance and memory usage.");
             public static readonly GUIContent ShadowNearPlane = EditorGUIUtility.TrTextContent("Near Plane", "Controls the value for the near clip plane when rendering shadows. Currently clamped to 0.1 units or 1% of the lights range property, whichever is lower.");
-            public static string[] biasOptions = Enum.GetNames(typeof(BiasOption));
+
+            public static GUIContent shadowBias = EditorGUIUtility.TrTextContent("Bias", "Controls if the bias is using the settings from the pipeline asset or if it is being overriden.");
+            public static int[] optionDefaultValues = { 0, 1 };
+
+            public static GUIContent[] displayedDefaultOptions =
+            {
+                new GUIContent("Custom"),
+                new GUIContent("Use Pipeline Settings")
+            };
         }
 
         static Styles s_Styles;
@@ -68,19 +75,30 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
             }
         }
 
-        SerializedProperty m_UseAdditionalDataProp;
+        LWRPAdditionalLightData m_AdditionalLightData;
+        SerializedObject m_AdditionalLightDataSO;
 
-        public enum BiasOption
-        {
-            UsePipeline,
-            Custom
-        }
+        SerializedProperty m_UseAdditionalDataProp;
+        SerializedProperty m_DepthBiasProp;
+        SerializedProperty m_NormalBiasProp;
+
 
         protected override void OnEnable()
         {
-            
+            m_AdditionalLightData = lightProperty.gameObject.GetComponent<LWRPAdditionalLightData>();
+            init(m_AdditionalLightData);
             settings.OnEnable();
             UpdateShowOptions(true);
+        }
+
+        void init(LWRPAdditionalLightData additionalLightData)
+        {
+            if(additionalLightData == null)
+                return;
+            m_AdditionalLightDataSO = new SerializedObject(additionalLightData);
+            m_UseAdditionalDataProp = m_AdditionalLightDataSO.FindProperty("m_UsePipelineSettings");
+            m_DepthBiasProp = m_AdditionalLightDataSO.FindProperty("m_DepthBias");
+            m_NormalBiasProp = m_AdditionalLightDataSO.FindProperty("m_NormalBias");
         }
 
         public override void OnInspectorGUI()
@@ -171,6 +189,58 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
             EditorGUILayout.Slider(settings.spotAngle, 1f, 179f, s_Styles.SpotAngle);
         }
 
+        void DrawAdditionalShadowData()
+        {
+            bool hasChanged = false;
+            int selectedUseAdditionalData;
+
+            if (m_AdditionalLightDataSO == null)
+            {
+                selectedUseAdditionalData = 1;
+            }
+            else
+            {
+                m_AdditionalLightDataSO.Update();
+                selectedUseAdditionalData = !m_AdditionalLightData.usePipelineSettings ? 0 : 1;
+            }
+
+            Rect controlRectAdditionalData = EditorGUILayout.GetControlRect(true);
+            if(m_AdditionalLightDataSO != null)
+                EditorGUI.BeginProperty(controlRectAdditionalData, Styles.shadowBias, m_UseAdditionalDataProp);
+            EditorGUI.BeginChangeCheck();
+
+            selectedUseAdditionalData = EditorGUI.IntPopup(controlRectAdditionalData, Styles.shadowBias, selectedUseAdditionalData, Styles.displayedDefaultOptions, Styles.optionDefaultValues);
+            if (EditorGUI.EndChangeCheck())
+            {
+                hasChanged = true;
+            }
+            if(m_AdditionalLightDataSO != null)
+                EditorGUI.EndProperty();
+
+            if (selectedUseAdditionalData != 1 && m_AdditionalLightDataSO != null)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Slider(m_DepthBiasProp, 0f, 10f, "Depth");
+                EditorGUILayout.Slider(m_NormalBiasProp, 0f, 10f, "Normal");
+                EditorGUI.indentLevel--;
+
+                m_AdditionalLightDataSO.ApplyModifiedProperties();
+            }
+
+            if (hasChanged)
+            {
+                if (m_AdditionalLightDataSO == null)
+                {
+                    lightProperty.gameObject.AddComponent<LWRPAdditionalLightData>();
+                    m_AdditionalLightData = lightProperty.gameObject.GetComponent<LWRPAdditionalLightData>();
+                    init(m_AdditionalLightData);
+                }
+
+                m_UseAdditionalDataProp.intValue = selectedUseAdditionalData;
+                m_AdditionalLightDataSO.ApplyModifiedProperties();
+            }
+        }
+
         void ShadowsGUI()
         {
             // Shadows drop-down. Area lights can only be baked and always have shadows.
@@ -199,13 +269,8 @@ namespace UnityEditor.Experimental.Rendering.LightweightPipeline
                     EditorGUILayout.LabelField(Styles.ShadowRealtimeSettings);
                     EditorGUI.indentLevel += 1;
                     EditorGUILayout.Slider(settings.shadowsStrength, 0f, 1f, Styles.ShadowStrength);
-                    int bias = 0;
-                    //EditorGUILayout.EnumPopup(BiasOption, GUIStyle.none, null);
 
-                    //CoreEditorUtils.DrawPopup(Styles.mainLightRenderingModeText, m_MainLightRenderingModeProp, Styles.biasOptions);
-
-                    // Hiding the resolution
-                    //EditorGUILayout.PropertyField(settings.shadowsResolution, Styles.ShadowResolution);
+                    DrawAdditionalShadowData();
 
                     // this min bound should match the calculation in SharedLightData::GetNearPlaneMinBound()
                     float nearPlaneMinBound = Mathf.Min(0.01f * settings.range.floatValue, 0.1f);
