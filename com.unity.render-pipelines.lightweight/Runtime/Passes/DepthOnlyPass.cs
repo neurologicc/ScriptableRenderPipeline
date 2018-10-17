@@ -45,7 +45,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
             if ((int)samples > 1)
             {
-                baseDescriptor.bindMS = (int)samples > 1 && !SystemInfo.supportsMultisampleAutoResolve;
+                baseDescriptor.bindMS = false;
                 baseDescriptor.msaaSamples = (int)samples;
             }
 
