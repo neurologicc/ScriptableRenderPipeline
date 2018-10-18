@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Expose frameSettings and Capture settings for reflection and planar probe
 - Update UI for reflection probe, planar probe, camera and HDRP Asset
 - Implement proper linear blending for volumetric lighting via deep compositing as described in the paper "Deep Compositing Using Lie Algebras"
+- Changed  planar mapping to match terrain convention (XZ instead of ZX)
 
 ## [4.0.0-preview] - 2018-09-28
 
