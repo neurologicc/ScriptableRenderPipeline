@@ -18,6 +18,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
         void ExecuteBeforeCameraRender(LightweightRenderPipeline pipelineInstance, ScriptableRenderContext context, Camera camera);
     }
 
+
     public sealed partial class LightweightRenderPipeline : RenderPipeline
     {
         static class PerFrameBuffer
@@ -38,7 +39,45 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
         CullResults m_CullResults;
         RenderSetup m_RenderSetup;
 
-        public ScriptableRenderer renderer { get; private set; }
+        const int k_MaxPerObjectAdditionalLightsNoStructuredBuffer = 4;
+        const int k_MaxVisibleAdditionalLightsNoStructuredBuffer = 16;
+        const int k_MaxVisibleAdditioanlLightsStructuredBuffer = 4096;
+        public static bool useStructuredBufferForLights
+        {
+            get
+            {
+                // TODO: Graphics Emulation are breaking StructuredBuffers disabling it for now until
+                // we have a fix for it
+                return false;
+                // return SystemInfo.supportsComputeShaders &&
+                //        SystemInfo.graphicsDeviceType != GraphicsDeviceType.OpenGLCore &&
+                //        !Application.isMobilePlatform &&
+                //        Application.platform != RuntimePlatform.WebGLPlayer;
+            }
+        }
+
+
+        public int maxPerObjectAdditionalLights
+        {
+            get
+            {
+                return useStructuredBufferForLights ?
+                    8 : k_MaxPerObjectAdditionalLightsNoStructuredBuffer;
+            }
+        }
+
+        public int maxVisibleAdditionalLights
+        {
+            get
+            {
+                return useStructuredBufferForLights ?
+                    k_MaxVisibleAdditioanlLightsStructuredBuffer :
+                    k_MaxVisibleAdditionalLightsNoStructuredBuffer;
+            }
+        }
+
+
+        //public ScriptableRenderer renderer { get; private set; }
         PipelineSettings settings { get; set; }
 
         private PostProcessRenderContext m_PostProcessRenderContext;
@@ -115,7 +154,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
         public LightweightRenderPipeline(LightweightRenderPipelineAsset asset)
         {
             settings = PipelineSettings.Create(asset);
-            renderer = new ScriptableRenderer(asset);
+            //renderer = new ScriptableRenderer(asset);
 
             SetSupportedRenderingFeatures();
             SetSupportedShaderFeatures(asset);
@@ -155,7 +194,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             SceneViewDrawMode.ResetDrawMode();
 #endif
 
-            renderer.Dispose();
+            //renderer.Dispose();
 
             Lightmapping.ResetDelegate();
         }
@@ -200,7 +239,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             {
                 CameraData cameraData;
                 PipelineSettings settings = pipelineInstance.settings;
-                ScriptableRenderer renderer = pipelineInstance.renderer;
+                //ScriptableRenderer renderer = pipelineInstance.renderer;
                 InitializeCameraData(settings, camera, out cameraData);
                 SetupPerCameraShaderConstants(cameraData);
 
@@ -228,7 +267,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
                 RenderingData renderingData;
                 InitializeRenderingData(settings, ref cameraData, ref cullResults,
-                    renderer.maxVisibleAdditionalLights, renderer.maxPerObjectAdditionalLights, out renderingData);
+                    pipelineInstance.maxVisibleAdditionalLights, pipelineInstance.maxPerObjectAdditionalLights, out renderingData);
 
                 RenderPassReference<RenderingData> renderingDataRef = (RenderPassReference<RenderingData>)RenderSetupManager.GetValue("RenderingData");
                 renderingDataRef.Value = renderingData;

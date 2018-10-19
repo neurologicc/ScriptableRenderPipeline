@@ -29,20 +29,6 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
         const int k_MaxVisibleAdditionalLightsNoStructuredBuffer = 16;
         const int k_MaxVisibleAdditioanlLightsStructuredBuffer = 4096;
 
-        public static bool useStructuredBufferForLights
-        {
-            get
-            {
-                // TODO: Graphics Emulation are breaking StructuredBuffers disabling it for now until
-                // we have a fix for it
-                return false;
-                // return SystemInfo.supportsComputeShaders &&
-                //        SystemInfo.graphicsDeviceType != GraphicsDeviceType.OpenGLCore &&
-                //        !Application.isMobilePlatform &&
-                //        Application.platform != RuntimePlatform.WebGLPlayer;
-            }
-        }
-
         public void SetupPerObjectLightIndices(ref CullResults cullResults, ref LightData lightData)
         {
             if (lightData.additionalLightsCount == 0)
@@ -118,7 +104,7 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
 
             SetupPerObjectLightIndices(ref m_RenderingData.Value.cullResults, ref m_RenderingData.Value.lightData);
 
-            m_RendererConfiguration.Value = ScriptableRenderer.GetRendererConfiguration(m_RenderingData.Value.lightData.additionalLightsCount);
+            m_RendererConfiguration.Value = GetRendererConfiguration(m_RenderingData.Value.lightData.additionalLightsCount);
         }
     }
 }

@@ -97,7 +97,7 @@ public class RenderPassInfoDrawer : PropertyDrawer
             return "None";
 
         int startPos = typeString.Length;
-        while (typeString[startPos-1] != '.')
+        while (startPos > 0 && typeString[startPos-1] != '.')
             startPos--;
 
         typeString = typeString.Substring(startPos);
