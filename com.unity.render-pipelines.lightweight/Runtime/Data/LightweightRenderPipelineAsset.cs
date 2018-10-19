@@ -4,6 +4,8 @@ using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
 #endif
 
+using UnityEngine.Experimental.Rendering.ModularSRP;
+
 namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 {
     public enum ShadowCascadesOption
@@ -111,9 +113,15 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
         [SerializeField] ShadowResolution m_ShadowAtlasResolution = ShadowResolution._256;
 
         [SerializeField] LightweightRenderPipelineResources m_ResourcesAsset;
+
+        [SerializeField] RenderSetup m_RenderSetup;
+
 #if UNITY_EDITOR
         [NonSerialized]
         LightweightRenderPipelineEditorResources m_EditorResourcesAsset;
+
+        public RenderSetup renderSetup { get { return m_RenderSetup; } }
+
 
         static readonly string s_SearchPathProject = "Assets";
         static readonly string s_SearchPathPackage = "Packages/com.unity.render-pipelines.lightweight";

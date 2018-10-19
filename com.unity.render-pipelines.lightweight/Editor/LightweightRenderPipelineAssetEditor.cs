@@ -94,6 +94,8 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
         SerializedProperty m_XRConfig;
 
+        SerializedProperty m_RenderSetup;
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
@@ -104,6 +106,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             DrawShadowSettings();
             DrawAdvancedSettings();
             EditorGUILayout.PropertyField(m_XRConfig);
+            EditorGUILayout.PropertyField(m_RenderSetup);
 
             serializedObject.ApplyModifiedProperties();
         }
@@ -137,6 +140,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             m_MixedLightingSupportedProp = serializedObject.FindProperty("m_MixedLightingSupported");
 
             m_XRConfig = serializedObject.FindProperty("m_SavedXRConfig");
+            m_RenderSetup = serializedObject.FindProperty("m_RenderSetup");
         }
 
         void DrawGeneralSettings()

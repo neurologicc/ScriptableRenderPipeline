@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.PostProcessing;
 
 namespace UnityEngine.Experimental.Rendering.LightweightPipeline
@@ -30,6 +31,26 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
         public LightData lightData;
         public ShadowData shadowData;
         public bool supportsDynamicBatching;
+
+        bool CanCopyDepth()
+        {
+            bool msaaEnabledForCamera = (int)cameraData.msaaSamples > 1;
+            bool supportsTextureCopy = SystemInfo.copyTextureSupport != CopyTextureSupport.None;
+            bool supportsDepthTarget = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.Depth);
+            bool supportsDepthCopy = !msaaEnabledForCamera && (supportsDepthTarget || supportsTextureCopy);
+
+            // TODO:  We don't have support to highp Texture2DMS currently and this breaks depth precision.
+            // currently disabling it until shader changes kick in.
+            //bool msaaDepthResolve = msaaEnabledForCamera && SystemInfo.supportsMultisampledTextures != 0;
+            bool msaaDepthResolve = false;
+            return supportsDepthCopy || msaaDepthResolve;
+        }
+
+
+        public bool RequiresDepthPrepass()
+        {
+            return (shadowData.requiresScreenSpaceShadowResolve || cameraData.isSceneViewCamera || (cameraData.requiresDepthTexture && !CanCopyDepth())) | cameraData.isStereoEnabled;
+        }
     }
 
     public struct LightData

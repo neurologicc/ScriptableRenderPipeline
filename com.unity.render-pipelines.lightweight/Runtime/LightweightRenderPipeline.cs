@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.Experimental.GlobalIllumination;
 using Lightmapping = UnityEngine.Experimental.GlobalIllumination.Lightmapping;
+using UnityEngine.Experimental.Rendering.ModularSRP;
 
 namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 {
@@ -32,23 +33,15 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             public static int _ScaledScreenParams;
         }
 
-        private static IRendererSetup s_DefaultRendererSetup;
-        private static IRendererSetup defaultRendererSetup
-        {
-            get
-            {
-                if (s_DefaultRendererSetup == null)
-                    s_DefaultRendererSetup = new DefaultRendererSetup();
-
-                return s_DefaultRendererSetup;
-            }
-        }
 
         const string k_RenderCameraTag = "Render Camera";
         CullResults m_CullResults;
+        RenderSetup m_RenderSetup;
 
         public ScriptableRenderer renderer { get; private set; }
         PipelineSettings settings { get; set; }
+
+        private PostProcessRenderContext m_PostProcessRenderContext;
 
         internal struct PipelineSettings
         {
@@ -140,6 +133,16 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             Shader.globalRenderPipeline = "LightweightPipeline";
 
             Lightmapping.SetDelegate(lightsDelegate);
+
+            m_PostProcessRenderContext = new PostProcessRenderContext();
+
+            m_RenderSetup = asset.renderSetup;
+            RenderSetupManager.ClearOutputs();
+            RenderSetupManager.CreateOutput("RenderingData", new RenderPassReference<RenderingData>());
+            RenderPassReference<PostProcessRenderContext> renderContextRef = (RenderPassReference<PostProcessRenderContext>)RenderSetupManager.CreateOutput("PostProcessRenderContext", new RenderPassReference<PostProcessRenderContext>());
+            renderContextRef.Value = new PostProcessRenderContext();
+
+            RenderSetupManager.Initialize(m_RenderSetup);
         }
 
         public sealed override void Dispose()
@@ -179,11 +182,12 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
                 foreach (var beforeCamera in camera.GetComponents<IBeforeCameraRender>())
                     beforeCamera.ExecuteBeforeCameraRender(this, renderContext, camera);
 
-                RenderSingleCamera(this, renderContext, camera, ref m_CullResults, camera.GetComponent<IRendererSetup>());
+                //RenderSingleCamera(this, renderContext, camera, ref m_CullResults, camera.GetComponent<IRendererSetup>());
+                RenderSingleCamera(this, renderContext, camera, ref m_CullResults);
             }
         }
 
-        public static void RenderSingleCamera(LightweightRenderPipeline pipelineInstance, ScriptableRenderContext context, Camera camera, ref CullResults cullResults, IRendererSetup setup = null)
+        public static void RenderSingleCamera(LightweightRenderPipeline pipelineInstance, ScriptableRenderContext context, Camera camera, ref CullResults cullResults)
         {
             if (pipelineInstance == null)
             {
@@ -220,17 +224,24 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 #endif
                 CullResults.Cull(ref cullingParameters, context, ref cullResults);
 
+
+
                 RenderingData renderingData;
                 InitializeRenderingData(settings, ref cameraData, ref cullResults,
                     renderer.maxVisibleAdditionalLights, renderer.maxPerObjectAdditionalLights, out renderingData);
 
-                var setupToUse = setup;
-                if (setupToUse == null)
-                    setupToUse = defaultRendererSetup;
+                RenderPassReference<RenderingData> renderingDataRef = (RenderPassReference<RenderingData>)RenderSetupManager.GetValue("RenderingData");
+                renderingDataRef.Value = renderingData;
+                RenderSetupManager.Execute(pipelineInstance.m_RenderSetup, context);
 
-                renderer.Clear();
-                setupToUse.Setup(renderer, ref renderingData);
-                renderer.Execute(context, ref renderingData);
+                //var setupToUse = setup;
+                //if (setupToUse == null)
+                //    setupToUse = defaultRendererSetup;
+                
+
+                //renderer.Clear();
+                //setupToUse.Setup(renderer, ref renderingData);
+                //renderer.Execute(context, ref renderingData);
 
                 context.ExecuteCommandBuffer(cmd);
                 CommandBufferPool.Release(cmd);
