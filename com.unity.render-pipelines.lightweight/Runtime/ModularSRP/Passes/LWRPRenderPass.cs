@@ -47,23 +47,6 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
             return desc;
         }
 
-        public ClearFlag GetCameraClearFlag(Camera camera)
-        {
-            if (camera == null)
-                throw new ArgumentNullException("camera");
-
-            ClearFlag clearFlag = ClearFlag.None;
-            CameraClearFlags cameraClearFlags = camera.clearFlags;
-            if (cameraClearFlags != CameraClearFlags.Nothing)
-            {
-                clearFlag |= ClearFlag.Depth;
-                if (cameraClearFlags == CameraClearFlags.Color || cameraClearFlags == CameraClearFlags.Skybox)
-                    clearFlag |= ClearFlag.Color;
-            }
-
-            return clearFlag;
-        }
-
         public RendererConfiguration GetRendererConfiguration(int additionalLightsCount)
         {
             RendererConfiguration configuration = RendererConfiguration.PerObjectReflectionProbes | RendererConfiguration.PerObjectLightmaps | RendererConfiguration.PerObjectLightProbe;
@@ -80,6 +63,9 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
 
         public void RenderPostProcess(PostProcessRenderContext postProcessingContext, CommandBuffer cmd, ref CameraData cameraData, RenderTextureFormat colorFormat, RenderTargetIdentifier source, RenderTargetIdentifier dest, bool opaqueOnly)
         {
+            if (cameraData.postProcessLayer == null || postProcessingContext == null)
+                return;
+
             Camera camera = cameraData.camera;
             postProcessingContext.Reset();
             postProcessingContext.camera = camera;

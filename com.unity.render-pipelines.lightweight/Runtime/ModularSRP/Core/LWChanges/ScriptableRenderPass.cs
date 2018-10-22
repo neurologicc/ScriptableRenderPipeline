@@ -36,6 +36,23 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
 
         public abstract void Execute(ScriptableRenderContext context);
 
+        public ClearFlag GetCameraClearFlag(Camera camera)
+        {
+            if (camera == null)
+                throw new ArgumentNullException("camera");
+
+            ClearFlag clearFlag = ClearFlag.None;
+            CameraClearFlags cameraClearFlags = camera.clearFlags;
+            if (cameraClearFlags != CameraClearFlags.Nothing)
+            {
+                clearFlag |= ClearFlag.Depth;
+                if (cameraClearFlags == CameraClearFlags.Color || cameraClearFlags == CameraClearFlags.Skybox)
+                    clearFlag |= ClearFlag.Color;
+            }
+
+            return clearFlag;
+        }
+
         protected DrawRendererSettings CreateDrawRendererSettings(Camera camera, SortFlags sortFlags, RendererConfiguration rendererConfiguration, bool supportsDynamicBatching)
         {
             DrawRendererSettings settings = new DrawRendererSettings(camera, m_ShaderPassNames[0]);
@@ -48,6 +65,7 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
                 settings.flags |= DrawRendererFlags.EnableDynamicBatching;
             return settings;
         }
+
 
         protected static void SetRenderTarget(
             CommandBuffer cmd,

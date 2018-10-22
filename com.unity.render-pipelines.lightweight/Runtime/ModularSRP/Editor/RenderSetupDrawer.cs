@@ -11,6 +11,7 @@ using UnityEngine.Experimental.Rendering.ModularSRP;
 public class RenderPassInfoDrawer : PropertyDrawer
 {
     private ReorderableList m_ReorderableList;
+    private Texture m_ErrorIcon;
 
     private void Init(SerializedProperty property)
     {
@@ -23,6 +24,9 @@ public class RenderPassInfoDrawer : PropertyDrawer
         m_ReorderableList.drawElementCallback = DrawOptionData;
         m_ReorderableList.drawHeaderCallback = DrawHeader;
         m_ReorderableList.onAddDropdownCallback = DrawDropdown;
+
+        if(m_ErrorIcon == null)
+            m_ErrorIcon = EditorGUIUtility.Load("icons/console.erroricon.sml.png") as Texture2D;
     }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -39,6 +43,7 @@ public class RenderPassInfoDrawer : PropertyDrawer
     private void DrawDropdown(Rect buttonRect, ReorderableList list)
     {
         RenderPassInfo[] passClasses = RenderPassReflectionUtilities.QueryRenderPasses();
+
 
         var menu = new GenericMenu();
         if (passClasses != null)
@@ -76,13 +81,28 @@ public class RenderPassInfoDrawer : PropertyDrawer
         m_ReorderableList.serializedProperty.serializedObject.ApplyModifiedProperties();
     }
 
+
+    static GUIContent s_TextImage = new GUIContent();
+    static GUIContent TempContent(string t, Texture i)
+    {
+        s_TextImage.image = i;
+        s_TextImage.text = t;
+        s_TextImage.tooltip = null;
+        return s_TextImage;
+    }
+
+
     private void DrawOptionData(Rect rect, int index, bool isActive, bool isFocused)
     {
         SerializedProperty itemData = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
         SerializedProperty itemText = itemData.FindPropertyRelative("className");
 
-        Rect labelRect = new Rect(rect.x, rect.y, rect.width, rect.height);
-        EditorGUI.LabelField(labelRect, new GUIContent(TypeToName(itemText.stringValue)));
+
+
+
+        string message = TypeToName(itemText.stringValue);
+        //EditorGUI.LabelField(rect, TempContent(message, m_ErrorIcon), EditorStyles.label);
+        EditorGUI.LabelField(rect, message);
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
