@@ -32,6 +32,8 @@ public class RenderPassInfoDrawer : PropertyDrawer
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
         Init(property);
+        RenderSetup renderSetup = fieldInfo.GetValue(property.serializedObject.targetObject) as RenderSetup;
+        renderSetup.CheckForErrors();
         m_ReorderableList.DoList(position);
     }
 
@@ -83,26 +85,29 @@ public class RenderPassInfoDrawer : PropertyDrawer
 
 
     static GUIContent s_TextImage = new GUIContent();
-    static GUIContent TempContent(string t, Texture i)
+    static GUIContent TempContent(string text, string tooltip, Texture i)
     {
         s_TextImage.image = i;
-        s_TextImage.text = t;
-        s_TextImage.tooltip = null;
+        s_TextImage.text = text;
+        s_TextImage.tooltip = tooltip;
         return s_TextImage;
     }
-
 
     private void DrawOptionData(Rect rect, int index, bool isActive, bool isFocused)
     {
         SerializedProperty itemData = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
         SerializedProperty itemText = itemData.FindPropertyRelative("className");
-
-
+        SerializedProperty errorText = itemData.FindPropertyRelative("errorMessage");
 
 
         string message = TypeToName(itemText.stringValue);
-        //EditorGUI.LabelField(rect, TempContent(message, m_ErrorIcon), EditorStyles.label);
-        EditorGUI.LabelField(rect, message);
+        if (String.IsNullOrEmpty(errorText.stringValue))
+            EditorGUI.LabelField(rect, message);
+        else
+        {
+            EditorGUI.LabelField(rect, TempContent(message, errorText.stringValue, m_ErrorIcon), EditorStyles.label);
+        }
+
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

@@ -7,5 +7,6 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
     {
         public string assemblyName;
         public string className;
+        public string errorMessage;
     }
 }

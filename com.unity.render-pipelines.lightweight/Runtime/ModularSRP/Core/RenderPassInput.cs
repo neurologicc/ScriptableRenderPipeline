@@ -6,7 +6,7 @@ public class RenderPassInput : System.Attribute
 {
     string m_Name;
     object m_DefaultValue;
-    bool   m_HasDefaultValue = true;
+    bool   m_HasDefaultValue = false;
 
     public RenderPassInput(string input)
     {
@@ -20,18 +20,21 @@ public class RenderPassInput : System.Attribute
     {
         m_Name = input;
         m_DefaultValue = defaultValue;
+        m_HasDefaultValue = true;
     }
 
     public RenderPassInput(string input, string defaultValue)
     {
         m_Name = input;
         m_DefaultValue = defaultValue;
+        m_HasDefaultValue = true;
     }
 
     public RenderPassInput(string input, int defaultValue)
     {
         m_Name = input;
         m_DefaultValue = defaultValue;
+        m_HasDefaultValue = true;
     }
 
     public string Name { get { return m_Name; } }

@@ -114,17 +114,27 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
         [SerializeField] LightweightRenderPipelineResources m_ResourcesAsset;
 
-        [SerializeField] RenderSetup m_RenderSetup = RenderSetup.CreateRenderSetup(new Type[] 
-        {
-                typeof(SetupLightsAndTexturesPass),
-                typeof(SetupForwardRenderingPass),
-                typeof(CreateLightweightRenderTexturesPass),
-                typeof(SetupLightweightConstantsPass),
-                typeof(RenderOpaqueForwardPass),
-                typeof(DrawSkyboxPass),
-                typeof(RenderTransparentForwardPass),
-                typeof(TransparentPostProcessPass)
-        });
+        [SerializeField] RenderSetup m_RenderSetup = RenderSetup.CreateRenderSetup(
+            // List all the passes
+            new Type[] 
+            {
+                    typeof(SetupLightsAndTexturesPass),
+                    typeof(SetupForwardRenderingPass),
+                    typeof(CreateLightweightRenderTexturesPass),
+                    typeof(SetupLightweightConstantsPass),
+                    typeof(RenderOpaqueForwardPass),
+                    typeof(DrawSkyboxPass),
+                    typeof(RenderTransparentForwardPass),
+                    typeof(TransparentPostProcessPass)
+            },
+            // List all the external outputs
+            new string[]
+            {
+                "RenderingData",
+                "PostProcessRenderContext"
+            }
+
+        );
 
 #if UNITY_EDITOR
         [NonSerialized]
