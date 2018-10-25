@@ -13,6 +13,9 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
     public class RenderSetup
     {
         [SerializeField]
+        public LightweightRenderPipelineAsset m_RenderPipelineAsset;
+
+        [SerializeField]
         public List<RenderPassInfo> m_RenderPassList;   // This contains the data to create instances of render passes
 
         [SerializeField]
@@ -21,11 +24,13 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
         // Runtime Only Members
         public List<IRenderPass> m_RenderPassInstances; // This is basically the list above but an instanced version.
 
+
         public static RenderSetup CreateRenderSetup(Type[] passes, string[] externalOutputs, LightweightRenderPipelineAsset asset)
         {
             RenderSetup retRenderSetup = new RenderSetup();
             retRenderSetup.m_RenderPassList = new List<RenderPassInfo>();
             retRenderSetup.m_ExternalOutputs = new List<string>();
+            retRenderSetup.m_RenderPipelineAsset = asset;
 
             foreach (var pass in passes)
             {
@@ -41,8 +46,9 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
 
                 retRenderSetup.m_RenderPassList.Add(info);
             }
+            AssetDatabase.SaveAssets();
 
-            foreach(var output in externalOutputs)
+            foreach (var output in externalOutputs)
                 retRenderSetup.m_ExternalOutputs.Add(output);
 
             return retRenderSetup;

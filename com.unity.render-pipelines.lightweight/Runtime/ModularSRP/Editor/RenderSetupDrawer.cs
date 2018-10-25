@@ -5,12 +5,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.UI;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Experimental.Rendering.LightweightPipeline;
 using UnityEngine.Experimental.Rendering.ModularSRP;
 
 [CustomPropertyDrawer(typeof(RenderSetup), true)]
 public class RenderPassInfoDrawer : PropertyDrawer
 {
     private ReorderableList m_ReorderableList;
+    private RenderPipelineAsset m_RenderPipelineAsset;
     private Texture m_ErrorIcon;
 
     private void Init(SerializedProperty property)
@@ -19,6 +22,7 @@ public class RenderPassInfoDrawer : PropertyDrawer
             return;
 
         SerializedProperty array = property.FindPropertyRelative("m_RenderPassList");
+        m_RenderPipelineAsset = (RenderPipelineAsset)property.FindPropertyRelative("m_RenderPipelineAsset").objectReferenceValue;
 
         m_ReorderableList = new ReorderableList(property.serializedObject, array);
         m_ReorderableList.drawElementCallback = DrawOptionData;
@@ -79,6 +83,17 @@ public class RenderPassInfoDrawer : PropertyDrawer
         var element = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
         element.FindPropertyRelative("className").stringValue = rpInfo.className;
         element.FindPropertyRelative("assemblyName").stringValue = rpInfo.assemblyName;
+
+        Type pass;
+        RenderPassReflectionUtilities.GetTypeFromClassAndAssembly(rpInfo.className, rpInfo.assemblyName, out pass);
+        var passObject = (ScriptableRenderPass)Activator.CreateInstance(pass);
+        passObject.name = pass.ToString();
+
+        AssetDatabase.AddObjectToAsset(passObject, m_RenderPipelineAsset);
+        AssetDatabase.SaveAssets();
+        element.FindPropertyRelative("passObject").objectReferenceValue = passObject;
+
+
         m_ReorderableList.index = index;
         m_ReorderableList.serializedProperty.serializedObject.ApplyModifiedProperties();
     }
