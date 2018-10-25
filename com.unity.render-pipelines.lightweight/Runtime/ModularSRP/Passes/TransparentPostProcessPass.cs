@@ -17,6 +17,8 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
     [RenderPassGroup("LWRP")]
     public class TransparentPostProcessPass : LWRPRenderPass
     {
+        public int someSerializedData = 11;
+
         [RenderPassInput("ColorAttachmentHandle")]
         RenderPassReference<RenderTargetHandle> m_ColorAttachmentHandle;
         [RenderPassInput("RenderingData")]

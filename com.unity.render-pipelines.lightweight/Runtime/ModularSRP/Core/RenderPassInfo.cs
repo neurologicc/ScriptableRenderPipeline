@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace UnityEngine.Experimental.Rendering.ModularSRP
 {
@@ -8,5 +8,6 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
         public string assemblyName;
         public string className;
         public string errorMessage;
+        public ScriptableRenderPass passObject;
     }
 }

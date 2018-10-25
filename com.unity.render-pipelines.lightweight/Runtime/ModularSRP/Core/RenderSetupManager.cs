@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
@@ -48,13 +48,18 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
             {
                 for (int i = 0; i < setup.m_RenderPassList.Count; i++)
                 {
-                    RenderPassInfo passInfo = setup.m_RenderPassList[i];
-                    Type classType;
+                    //RenderPassInfo passInfo = setup.m_RenderPassList[i];
+                    //Type classType;
 
-                    RenderPassReflectionUtilities.GetTypeFromClassAndAssembly(passInfo.className, passInfo.assemblyName, out classType);
+                    //RenderPassReflectionUtilities.GetTypeFromClassAndAssembly(passInfo.className, passInfo.assemblyName, out classType);
 
                     // Create an instance of our render pass. Render pass should have no arguments
-                    IRenderPass pass = (IRenderPass)Activator.CreateInstance(classType);
+                    //IRenderPass pass = (IRenderPass)Activator.CreateInstance(classType);
+                    IRenderPass pass = setup.m_RenderPassList[i].passObject;
+
+                    if (pass == null)
+                        continue;
+
                     setup.m_RenderPassInstances.Add(pass);
                     Type passType = pass.GetType();
 

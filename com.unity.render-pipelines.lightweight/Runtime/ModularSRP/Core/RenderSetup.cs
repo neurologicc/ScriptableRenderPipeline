@@ -1,11 +1,11 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-
+using UnityEngine.Experimental.Rendering.LightweightPipeline;
 
 namespace UnityEngine.Experimental.Rendering.ModularSRP
 {
@@ -21,7 +21,7 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
         // Runtime Only Members
         public List<IRenderPass> m_RenderPassInstances; // This is basically the list above but an instanced version.
 
-        public static RenderSetup CreateRenderSetup(Type[] passes, string[] externalOutputs)
+        public static RenderSetup CreateRenderSetup(Type[] passes, string[] externalOutputs, LightweightRenderPipelineAsset asset)
         {
             RenderSetup retRenderSetup = new RenderSetup();
             retRenderSetup.m_RenderPassList = new List<RenderPassInfo>();
@@ -31,6 +31,14 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
             {
                 RenderPassInfo info = new RenderPassInfo();
                 RenderPassReflectionUtilities.GetClassAndAssemblyFromType(pass, out info.className, out info.assemblyName);
+
+                //Type classType;
+                //RenderPassReflectionUtilities.GetTypeFromClassAndAssembly(info.className, info.assemblyName, out classType);
+                var passObject = (ScriptableRenderPass)Activator.CreateInstance(pass);
+                passObject.name = pass.ToString();
+                AssetDatabase.AddObjectToAsset(passObject, asset);
+                info.passObject = passObject;
+
                 retRenderSetup.m_RenderPassList.Add(info);
             }
 

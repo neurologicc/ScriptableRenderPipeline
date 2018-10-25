@@ -114,27 +114,7 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
 
         [SerializeField] LightweightRenderPipelineResources m_ResourcesAsset;
 
-        [SerializeField] RenderSetup m_RenderSetup = RenderSetup.CreateRenderSetup(
-            // List all the passes
-            new Type[] 
-            {
-                    typeof(SetupLightsAndTexturesPass),
-                    typeof(SetupForwardRenderingPass),
-                    typeof(CreateLightweightRenderTexturesPass),
-                    typeof(SetupLightweightConstantsPass),
-                    typeof(RenderOpaqueForwardPass),
-                    typeof(DrawSkyboxPass),
-                    typeof(RenderTransparentForwardPass),
-                    typeof(TransparentPostProcessPass)
-            },
-            // List all the external outputs
-            new string[]
-            {
-                "RenderingData",
-                "PostProcessRenderContext"
-            }
-
-        );
+        [SerializeField] RenderSetup m_RenderSetup;
 
 #if UNITY_EDITOR
         [NonSerialized]
@@ -152,9 +132,32 @@ namespace UnityEngine.Experimental.Rendering.LightweightPipeline
             public override void Action(int instanceId, string pathName, string resourceFile)
             {
                 var instance = CreateInstance<LightweightRenderPipelineAsset>();
+                AssetDatabase.CreateAsset(instance, pathName);
+
                 instance.m_EditorResourcesAsset = LoadResourceFile<LightweightRenderPipelineEditorResources>();
                 instance.m_ResourcesAsset = LoadResourceFile<LightweightRenderPipelineResources>();
-                AssetDatabase.CreateAsset(instance, pathName);
+
+                instance.m_RenderSetup = RenderSetup.CreateRenderSetup(
+                    // List all the passes
+                    new Type[]
+                    {
+                            typeof(SetupLightsAndTexturesPass),
+                            typeof(SetupForwardRenderingPass),
+                            typeof(CreateLightweightRenderTexturesPass),
+                            typeof(SetupLightweightConstantsPass),
+                            typeof(RenderOpaqueForwardPass),
+                            typeof(DrawSkyboxPass),
+                            typeof(RenderTransparentForwardPass),
+                            typeof(TransparentPostProcessPass)
+                    },
+                    // List all the external outputs
+                    new string[]
+                    {
+                        "RenderingData",
+                        "PostProcessRenderContext"
+                    },
+                    instance
+                );  
             }
         }
 

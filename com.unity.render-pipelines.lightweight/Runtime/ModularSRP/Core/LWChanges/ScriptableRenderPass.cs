@@ -9,7 +9,7 @@ namespace UnityEngine.Experimental.Rendering.ModularSRP
     /// <summary>
     /// Inherit from this class to perform custom rendering in the Lightweight Render Pipeline. 
     /// </summary>
-    public abstract class ScriptableRenderPass : IRenderPass
+    public abstract class ScriptableRenderPass : ScriptableObject, IRenderPass
     {
         private List<ShaderPassName> m_ShaderPassNames = new List<ShaderPassName>();
 
