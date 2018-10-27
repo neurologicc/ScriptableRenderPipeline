@@ -31,8 +31,10 @@ public class RenderPassInfoDrawer : PropertyDrawer
         m_ReorderableList.drawElementCallback = DrawOptionData;
         m_ReorderableList.drawHeaderCallback = DrawHeader;
         m_ReorderableList.onAddDropdownCallback = DrawDropdown;
+        m_ReorderableList.onRemoveCallback = RemoveItem;
 
-        if(m_ErrorIcon == null)
+
+        if (m_ErrorIcon == null)
             m_ErrorIcon = EditorGUIUtility.Load("icons/console.erroricon.sml.png") as Texture2D;
 
         FoldoutStates = new Dictionary<string, bool>();
@@ -45,6 +47,20 @@ public class RenderPassInfoDrawer : PropertyDrawer
         renderSetup.CheckForErrors();
         m_ReorderableList.DoList(position);
         DrawSetupData();
+    }
+
+
+    public void RemoveItem(ReorderableList reorderableList)
+    {
+        var element = reorderableList.serializedProperty.GetArrayElementAtIndex(reorderableList.index);
+        ScriptableRenderPass renderPass = (ScriptableRenderPass)element.FindPropertyRelative("passObject").objectReferenceValue;
+        if (renderPass != null)
+        {
+            AssetDatabase.RemoveObjectFromAsset(renderPass);
+            AssetDatabase.SaveAssets();
+        }
+
+        reorderableList.serializedProperty.DeleteArrayElementAtIndex(reorderableList.index);
     }
 
     private void DrawSetupData()
