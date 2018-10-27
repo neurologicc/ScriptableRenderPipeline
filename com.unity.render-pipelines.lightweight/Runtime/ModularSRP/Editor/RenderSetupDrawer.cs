@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +9,7 @@ using UnityEditor.UI;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Experimental.Rendering.LightweightPipeline;
 using UnityEngine.Experimental.Rendering.ModularSRP;
+using System.Reflection;
 
 [CustomPropertyDrawer(typeof(RenderSetup), true)]
 public class RenderPassInfoDrawer : PropertyDrawer
@@ -15,6 +17,7 @@ public class RenderPassInfoDrawer : PropertyDrawer
     private ReorderableList m_ReorderableList;
     private RenderPipelineAsset m_RenderPipelineAsset;
     private Texture m_ErrorIcon;
+    private Dictionary<string, bool> FoldoutStates;
 
     private void Init(SerializedProperty property)
     {
@@ -31,6 +34,8 @@ public class RenderPassInfoDrawer : PropertyDrawer
 
         if(m_ErrorIcon == null)
             m_ErrorIcon = EditorGUIUtility.Load("icons/console.erroricon.sml.png") as Texture2D;
+
+        FoldoutStates = new Dictionary<string, bool>();
     }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -39,6 +44,94 @@ public class RenderPassInfoDrawer : PropertyDrawer
         RenderSetup renderSetup = fieldInfo.GetValue(property.serializedObject.targetObject) as RenderSetup;
         renderSetup.CheckForErrors();
         m_ReorderableList.DoList(position);
+        DrawSetupData();
+    }
+
+    private void DrawSetupData()
+    {
+        if (FoldoutStates == null)
+            return;
+
+        Dictionary<string, List<Tuple<string,FieldInfo,ScriptableRenderPass>>> groupData = new Dictionary<string, List<Tuple<string, FieldInfo, ScriptableRenderPass>>>();
+ 
+        // First lets sort all our data into groups. Any item with "" as a group with not be grouped
+        int arraySize = m_ReorderableList.serializedProperty.arraySize;
+        for (int index = 0; index < arraySize; index++)
+        {
+            var element = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
+            ScriptableRenderPass renderPass = (ScriptableRenderPass)element.FindPropertyRelative("passObject").objectReferenceValue;
+
+            if (renderPass != null)
+            {
+                FieldInfo[] allFieldInfo = renderPass.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (allFieldInfo.Count() > 0)
+                {
+                    foreach (FieldInfo info in allFieldInfo)
+                    {
+                        RenderingDataGroup renderingDataGroup = info.GetCustomAttribute<RenderingDataGroup>();
+                        string groupName = "";
+                        if (renderingDataGroup != null)
+                        {
+                            groupName = renderingDataGroup.Group;
+                            if (groupName == null)
+                                groupName = "";
+                        }
+
+                        List<Tuple<string, FieldInfo, ScriptableRenderPass>> listToAddTo;
+                        if (!groupData.ContainsKey(groupName))
+                        {
+                            listToAddTo = new List<Tuple<string, FieldInfo, ScriptableRenderPass>>();
+                            groupData.Add(groupName, listToAddTo);
+                        }
+                        else
+                            listToAddTo = groupData[groupName];
+
+                        listToAddTo.Add(new Tuple<string, FieldInfo, ScriptableRenderPass>(info.Name, info, renderPass));
+                    }
+                }
+            }
+        }
+
+        // Now draw our grouped data
+        List<string> keys = groupData.Keys.ToList<string>();
+        keys.Sort((str1, str2) => string.Compare(str1, str2, true));  // sort our groups alphabetically first
+        foreach (string key in keys)
+        {
+            bool showContents = true;
+            bool useFoldout = key != "";
+            if (useFoldout)
+            {                 // Handle our foldout
+                if (!FoldoutStates.ContainsKey(key))
+                    FoldoutStates.Add(key, true);
+
+                showContents = FoldoutStates[key];
+                showContents = EditorGUILayout.Foldout(showContents, key);
+                FoldoutStates[key] = showContents;
+            }
+
+            if (showContents)
+            {
+                if(useFoldout)
+                    EditorGUI.indentLevel++;
+
+                List<Tuple<string, FieldInfo, ScriptableRenderPass>> data = groupData[key];
+                for (int i = 0; i < data.Count; i++)
+                {
+                    string name = data[i].Item1;
+                    object obj = ((FieldInfo)data[i].Item2).GetValue(data[i].Item3);
+                    FieldInfo fieldInfo = (FieldInfo)data[i].Item2;
+
+                    SerializedObject serializedObject = new UnityEditor.SerializedObject(data[i].Item3);
+                    SerializedProperty serializedProperty = serializedObject.FindProperty(fieldInfo.Name);
+                    if(serializedProperty != null)
+                        EditorGUILayout.PropertyField(serializedProperty);
+                    serializedObject.ApplyModifiedProperties();
+                }
+
+                if (useFoldout)
+                    EditorGUI.indentLevel--;
+            }
+        }
     }
 
     private void DrawHeader(Rect rect)
